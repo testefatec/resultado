@@ -1,0 +1,63 @@
+name: Receber Resultados de Alunos
+
+on:
+  workflow_dispatch:
+    inputs:
+      student_name:
+        description: 'Nome do Aluno'
+        required: true
+        type: string
+      student_id:
+        description: 'RA do Aluno'
+        required: true
+        type: string
+      assignment:
+        description: 'Nome da Atividade'
+        required: true
+        type: string
+      result:
+        description: 'Resultado da Atividade (JSON ou texto)'
+        required: true
+        type: string
+
+jobs:
+  save-result:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Create results directory
+        run: mkdir -p results
+      
+      - name: Save student result
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          STUDENT_ID="${{ github.event.inputs.student_id }}"
+          ASSIGNMENT="${{ github.event.inputs.assignment }}"
+          # Sanitize filename by removing special characters
+          STUDENT_ID_CLEAN=$(echo "$STUDENT_ID" | tr -cd '[:alnum:]_-')
+          ASSIGNMENT_CLEAN=$(echo "$ASSIGNMENT" | tr -cd '[:alnum:]_-')
+          FILENAME="results/${STUDENT_ID_CLEAN}_${ASSIGNMENT_CLEAN}_${TIMESTAMP}.txt"
+          
+          echo "=== RESULTADO DO ALUNO ===" > "$FILENAME"
+          echo "Nome: ${{ github.event.inputs.student_name }}" >> "$FILENAME"
+          echo "RA: ${{ github.event.inputs.student_id }}" >> "$FILENAME"
+          echo "Atividade: ${{ github.event.inputs.assignment }}" >> "$FILENAME"
+          echo "Data/Hora: $(date '+%Y-%m-%d %H:%M:%S')" >> "$FILENAME"
+          echo "" >> "$FILENAME"
+          echo "=== RESULTADO ===" >> "$FILENAME"
+          echo "${{ github.event.inputs.result }}" >> "$FILENAME"
+          
+          echo "Resultado salvo em: $FILENAME"
+      
+      - name: Commit and push results
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add results/
+          git commit -m "Adicionar resultado de ${{ github.event.inputs.student_name }} (RA: ${{ github.event.inputs.student_id }})" || echo "Nenhuma alteração para commitar"
+          git push

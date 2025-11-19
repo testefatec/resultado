@@ -1,0 +1,67 @@
+name: Exemplo de Workflow do Aluno
+
+# Este é um workflow de exemplo que os alunos podem usar como referência
+# para criar seus próprios workflows e enviar resultados
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_name:
+        description: 'Nome do teste a executar'
+        required: false
+        default: 'teste_exemplo'
+        type: string
+
+jobs:
+  example-job:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Executar exemplo de teste
+        id: test
+        run: |
+          echo "Executando teste: ${{ github.event.inputs.test_name }}"
+          echo "Data: $(date)"
+          
+          # Simulação de um teste
+          echo "Iniciando processo..."
+          sleep 2
+          echo "Processo concluído com sucesso!"
+          
+          # Definir resultado
+          echo "result=Sucesso - Teste executado em $(date)" >> $GITHUB_OUTPUT
+      
+      - name: Exibir resultado
+        run: |
+          echo "Resultado do teste: ${{ steps.test.outputs.result }}"
+          echo "Este resultado pode ser enviado para o repositório de resultados"
+      
+      - name: Criar arquivo de resultado (opcional)
+        run: |
+          mkdir -p output
+          echo "=== RELATÓRIO DO TESTE ===" > output/relatorio.txt
+          echo "Teste: ${{ github.event.inputs.test_name }}" >> output/relatorio.txt
+          echo "Data: $(date)" >> output/relatorio.txt
+          echo "Status: Sucesso" >> output/relatorio.txt
+          echo "Executado por: ${{ github.actor }}" >> output/relatorio.txt
+          
+          cat output/relatorio.txt
+      
+      - name: Upload resultado como artifact (opcional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultado-teste
+          path: output/relatorio.txt
+          retention-days: 30
+
+# INSTRUÇÕES PARA OS ALUNOS:
+# 
+# Para enviar o resultado deste workflow para o repositório de resultados:
+# 1. Execute este workflow
+# 2. Copie o resultado obtido
+# 3. Acesse o repositório: https://github.com/testefatec/resultado
+# 4. Vá em Actions > "Receber Resultados de Alunos"
+# 5. Preencha seus dados e cole o resultado
+# 6. Execute o workflow para salvar seu resultado
